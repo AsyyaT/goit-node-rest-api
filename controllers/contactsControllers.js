@@ -5,13 +5,21 @@ import ctrlWrapper from "../helpers/ctrlWrapper.js";
 const notFoundMessage = "Not found";
 
 export const getAllContacts = async (req, res) => {
-  const result = await contactsService.listContacts();
+  const {id} = req.user;
+  const { favorite } = req.query;
+  let result; 
+  if (favorite) {
+    result = await contactsService.contactsByStatus({owner: id, favorite: favorite});
+  } else {
+  result = await contactsService.listContacts({owner: id});
+}
   res.json(result);
 };
 
 export const getOneContact = async (req, res) => {
   const { id } = req.params;
-  const result = await contactsService.getContactById(id);
+  const {id: owner} = req.user;
+  const result = await contactsService.getContactById({id, owner});
 
   if (!result) {
     throw HttpError(404, notFoundMessage);
@@ -21,7 +29,8 @@ export const getOneContact = async (req, res) => {
 
 export const deleteContact = async (req, res) => {
   const { id } = req.params;
-  const result = await contactsService.removeContact(id);
+  const {id: owner} = req.user;
+  const result = await contactsService.removeContact({id, owner});
   if (!result) {
     throw HttpError(404, notFoundMessage);
   }
@@ -30,14 +39,16 @@ export const deleteContact = async (req, res) => {
 };
 
 export const createContact = async (req, res) => {
-  const result = await contactsService.addContact(req.body);
+  const {id} = req.user;
+  const result = await contactsService.addContact({...req.body, owner: id});
 
   res.status(201).json(result);
 };
 
 export const updateContact = async (req, res) => {
   const { id } = req.params;
-  const result = await contactsService.updateContact(id, req.body);
+    const {id: owner} = req.user;
+  const result = await contactsService.updateContact({id, owner}, req.body);
   if (!result) {
     throw HttpError(404, notFoundMessage);
   }
@@ -47,7 +58,8 @@ export const updateContact = async (req, res) => {
 
 export const updateStatusContact = async (req, res) => {
   const { id } = req.params;
-  const result = await contactsService.updateStatusContact(id, req.body);
+  const {id: owner} = req.user;
+  const result = await contactsService.updateStatusContact({id, owner}, req.body);
   if (!result) {
     throw HttpError(404, notFoundMessage);
   }
